@@ -21,10 +21,12 @@
     "@biomejs/biome": "2.3.7",
     "@types/node": "^24.10.1",
     "@types/react": "^19.2.7",
+    "react-devtools-core": "^6.1.5",
     "tsx": "^4.21.0",
     "typescript": "^5.9.3"
   },
   "dependencies": {
+    "@ai-sdk/groq": "^3.0.38",
     "@ai-sdk/openai": "^2.0.72",
     "@lmnr-ai/lmnr": "^0.7.9",
     "@types/shelljs": "^0.8.17",

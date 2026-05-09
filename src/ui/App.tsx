@@ -1,14 +1,14 @@
 import React, { useState, useCallback } from "react";
 import { Box, Text, useApp } from "ink";
 import type { ModelMessage } from "ai";
-import { runAgent } from "../agent/run.ts";
-import { MessageList, type Message } from "./components/MessageList.tsx";
-import { ToolCall, type ToolCallProps } from "./components/ToolCall.tsx";
-import { Spinner } from "./components/Spinner.tsx";
-import { Input } from "./components/Input.tsx";
-import { ToolApproval } from "./components/ToolApproval.tsx";
-import { TokenUsage } from "./components/TokenUsage.tsx";
-import type { ToolApprovalRequest, TokenUsageInfo } from "../types.ts";
+import { runAgent } from "../agent/run.js";
+import { MessageList, type Message } from "./components/MessageList.js";
+import { ToolCall, type ToolCallProps } from "./components/ToolCall.js";
+import { Spinner } from "./components/Spinner.js";
+import { Input } from "./components/Input.js";
+import { ToolApproval } from "./components/ToolApproval.js";
+import { TokenUsage } from "./components/TokenUsage.js";
+import type { ToolApprovalRequest, TokenUsageInfo } from "../types.js";
 
 interface ActiveToolCall extends ToolCallProps {
   id: string;
@@ -44,10 +44,10 @@ export function App() {
 
       try {
         const newHistory = await runAgent(userInput, conversationHistory, {
-          onToken: (token) => {
+          onToken: (token: string) => {
             setStreamingText((prev) => prev + token);
           },
-          onToolCallStart: (name, args) => {
+          onToolCallStart: (name: string, args: unknown) => {
             setActiveToolCalls((prev) => [
               ...prev,
               {
@@ -58,7 +58,7 @@ export function App() {
               },
             ]);
           },
-          onToolCallEnd: (name, result) => {
+          onToolCallEnd: (name: string, result: string) => {
             setActiveToolCalls((prev) =>
               prev.map((tc) =>
                 tc.name === name && tc.status === "pending"
@@ -67,7 +67,7 @@ export function App() {
               ),
             );
           },
-          onComplete: (response) => {
+          onComplete: (response: string) => {
             if (response) {
               setMessages((prev) => [
                 ...prev,
@@ -77,12 +77,12 @@ export function App() {
             setStreamingText("");
             setActiveToolCalls([]);
           },
-          onToolApproval: (name, args) => {
+          onToolApproval: (name: string, args: unknown) => {
             return new Promise<boolean>((resolve) => {
               setPendingApproval({ toolName: name, args, resolve });
             });
           },
-          onTokenUsage: (usage) => {
+          onTokenUsage: (usage: TokenUsageInfo) => {
             setTokenUsage(usage);
           },
         });

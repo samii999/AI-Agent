@@ -1,6 +1,6 @@
 import { tool, type ModelMessage, type ToolSet } from "ai";
 import { z } from "zod";
-import { SYSTEM_PROMPT } from "../src/agent/system/prompt.ts";
+import { SYSTEM_PROMPT } from "./prompt.ts";
 import type { EvalData, MultiTurnEvalData } from "./types.ts";
 
 /**
