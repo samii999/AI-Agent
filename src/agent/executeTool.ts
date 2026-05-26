@@ -6,23 +6,24 @@ export async function executeTool(
   name: string,
   args: Record<string, unknown>,
 ): Promise<string> {
+  // console.log(`Executing tool: ${name} with args:`, args);
+  
   const tool = tools[name as ToolName];
 
   if (!tool) {
     return `Unknown tool: ${name}`;
   }
 
-  const execute = tool.execute;
-  if (!execute) {
-    // Provider tools (like webSearch) are executed by OpenAI, not us
-    return `Provider tool ${name} - executed by model provider`;
-  }
-
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const result = await execute(args as any, {
+  const result = await tool.execute?.(args as any, {
     toolCallId: "",
     messages: [],
   });
 
+  if (result === undefined) {
+    return `Tool ${name} did not return a result`;
+  }
+
+  // console.log(`Tool ${name} result:`, result);
   return String(result);
 }

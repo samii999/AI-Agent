@@ -25,8 +25,9 @@
     "typescript": "^5.9.3"
   },
   "dependencies": {
+    "@ai-sdk/google": "^2.0.71",
     "@ai-sdk/openai": "^2.0.72",
-    "@lmnr-ai/lmnr": "^0.7.9",
+    "@lmnr-ai/lmnr": "^0.8.24",
     "@types/shelljs": "^0.8.17",
     "ai": "^5.0.102",
     "ink": "^6.5.1",

@@ -1,8 +1,35 @@
 import { generateText, type ModelMessage } from "ai";
-import { openai } from "@ai-sdk/openai";
+import { google } from "@ai-sdk/google";
+import { createOpenAI } from "@ai-sdk/openai";
 import { extractMessageText } from "./tokenEstimator.ts";
+import { getModel } from "../../config/models.ts";
 
-const SUMMARIZATION_PROMPT = `
+const groq = createOpenAI({
+  baseURL: "https://api.groq.com/openai/v1",
+  apiKey: process.env.GROQ_API_KEY,
+});
+
+function providerForModel(modelName: string) {
+  if (!modelName) return google(modelName);
+
+  const lower = modelName.toLowerCase();
+  if (lower.includes("qwen") || lower.includes("groq")) return groq(modelName);
+  if (lower.includes("gemini") || lower.includes("google")) return google(modelName);
+
+  return google(modelName);
+}
+
+const SUMMARIZATION_PROMPT = `You are a conversation summarizer. Your task is to create a concise summary of the conversation so far that preserves:
+
+1. Key decisions and conclusions reached
+2. Important context and facts mentioned
+3. Any pending tasks or questions
+4. The overall goal of the conversation
+
+Be concise but complete. The summary should allow the conversation to continue naturally.
+
+Conversation to summarize:
+
 `;
 
 /**
@@ -30,8 +57,32 @@ function messagesToText(messages: ModelMessage[]): string {
  */
 export async function compactConversation(
   messages: ModelMessage[],
-  model: string = "gpt-5-mini",
+  model: string = getModel("CONTEXT"),
 ): Promise<any> {
-  // Filter out system messages - they're handled separately
-  //
+  const conversationMessages = messages.filter((msg) => msg.role !== "system");
+
+  if (conversationMessages.length === 0) {
+    return [];
+  }
+
+  const conversationText = messagesToText(conversationMessages);
+
+  const { text: summary } = await generateText({
+    model: providerForModel(model),
+    prompt: SUMMARIZATION_PROMPT + conversationText,
+
+  });
+
+  const compactedMessages: any = [
+    {
+      role: "user",
+      content:
+        `[CONVERSATION SUMMARY]\n the following content is a summary of the conversation so far: \n ${summary}. please continue where we left off.`,
+    },
+    {
+      role: "assistant",
+      content: "Acknowledged. Continuing the conversation.",
+    },
+  ];
+  return compactedMessages;
 }

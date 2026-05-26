@@ -1,5 +1,6 @@
 import { generateObject } from "ai";
-import { openai } from "@ai-sdk/openai";
+import { createOpenAI } from "@ai-sdk/openai";
+import { createGoogleGenerativeAI } from "@ai-sdk/google";
 import { z } from "zod";
 
 import type {
@@ -8,6 +9,60 @@ import type {
   MultiTurnTarget,
   MultiTurnResult,
 } from "./types.ts";
+import { getModel } from "../src/config/models.ts";
+
+const groq = createOpenAI({
+  baseURL: 'https://api.groq.com/openai/v1',
+  apiKey: process.env.GROQ_API_KEY,
+});
+
+const google = createGoogleGenerativeAI({
+  apiKey: process.env.GOOGLE_GENERATIVE_AI_API_KEY,
+});
+
+const judgeSchema = z.object({
+  score: z.number().min(1).max(10).describe("Score from 1 to 10 where 1 is worst and 10 is best"),
+  reason: z.string().describe("Brief reasoning for the score"),
+});
+
+
+export const llmjudge = async (output: MultiTurnResult, target: MultiTurnTarget) => {
+  const result = await generateObject({
+    model: google(getModel('BRAIN_3')),
+    schema: judgeSchema,
+    schemaName: 'evaluation',
+    schemaDescription: 'Evaluate the quality of the response',
+    messages: [
+      {
+        role: 'system',
+        content: `
+          You are an expert evaluator. Score the agents response on a scale of 1-10.
+          Scoring critiria:
+          - 10: Response fully addresses the query with accurate, complete, and clear information
+          - 7-9: Response addresses the query with minor issues
+          - 4-6: Response addresses the query with significant issues
+          - 1-3: Response does not address the query
+        `
+      },
+      {
+        role: 'user',
+        content: `task: ${target.originalTask}
+        
+        Tools Called: ${JSON.stringify(output.toolCallOrder)}
+        Tool Results provided: ${JSON.stringify(target.mockToolResults)}
+
+        Agent's final answer: ${output.text}
+
+        Evaluate if this response correctly uses the tool results to answer the task.
+        `,
+      }
+    ],
+
+  });
+  
+  return result.object.score / 10;
+ 
+};
 
 export function toolsSelected(
   output: SingleTurnResult | MultiTurnResult,
